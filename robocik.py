@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pygame
 from pygame.locals import *
 from OpenGL.GL import *
@@ -11,7 +10,7 @@ from funkcyjka import rysuj, rysuj_walec, vertices, edges, faces, normals
 
 sys.setrecursionlimit(10000)# Domyślnie 1000
 
-# ZMIENNE
+#____ZMIENNE____
 pozycja_neutralna = False
 numer_etapu = 0
 zadanie_do_druku_po_neutralnej = None
@@ -24,7 +23,7 @@ czas_ostatniego_kroku = 0
 tryb_widoku = False  # do kontroli trybu widoku
 wyswietlanie_budowy_drukarki = True  # do kontroli renderowania drukarki
 
-# Początkowa pozycja suwaka
+# początkowa pozycja suwaka
 z_pos_blatu = 0.225
 y_pos_suwaka = -0.6
 x_pos_glowica = 0
@@ -42,25 +41,17 @@ kolor_glowicy = (0, 0.8, 0)
 kolor_dyszy = (0.8, 0, 0)
 
 #STAŁE
-opoznienie_kroku = 10  # szybkosc drukowania brył - zalecane ok 100 (mniej = szybciej)
-opoznienie_usuwania = 0.001  # ms (0.1 seconds) (mniej = szybciej)
-szybkosc_recznego_drukowania = 120 # okresla szybkosc stawianych bloczków przez uzytkownika (wiecej = szybciej)
+opoznienie_kroku = 100  # szybkosc drukowania - zalecane ok 100
+opoznienie_usuwania = 0.1  # ms (0.1 seconds)
+szybkosc_recznego_drukowania = 120
 stala_przesuniecia_wzgledem_srodka = 0.225  # to jest w osi z i dotyczy blatu
 stala_przesuniecia_dyszy = 0.05 + 0.15 + 0.025  # 0.05 - przesuniecie glowicy wzgledem suwaka;  0.15 - polowa glowicy; 0.025 - polowa dyszy
 stala_przesuniecia_atramentu = stala_przesuniecia_dyszy + 0.025 + 0.01  # 0.025 - kolejna polowa dyszy; 0.01 - polowa kosteczki
 
-# Neutralna pozycja
+# neutralna pozycja
 NEUTRAL_Y_SUWAKA = -0.6
 NEUTRAL_X_GLOWICY = 0.0
 NEUTRAL_Z_BLATU = 0.225
-
-# NOWE ZMIENNE DLA UCZENIA MASZYNOWEGO
-tryb_nagrywania = False
-nagrane_ruchy = []  # Lista krotek: ('ruch' lub 'blok', wartość, czas_od_początku_nagrywania)
-tryb_odtwarzania = False
-ilosc_ruchow_odtworzen = 0
-czas_rozpoczecia_odtwarzania = 0
-czas_rozpoczecia_nagrywania = 0
 
 def Table(blat_z, suwak_y, glowica_x):
     if wyswietlanie_budowy_drukarki:
@@ -158,7 +149,7 @@ def generator_kuli(r_promien):
 
 def ustaw_pozycje_nautralna():
     global z_pos_blatu, y_pos_suwaka, x_pos_glowica, numer_etapu, pozycja_neutralna
-    global drukowanie, generator, zadanie_do_druku_po_neutralnej, tryb_odtwarzania, ilosc_ruchow_odtworzen, czas_rozpoczecia_odtwarzania
+    global drukowanie, generator, zadanie_do_druku_po_neutralnej
 
     # Etap 1: Suwak do -0.6
     if numer_etapu == 0:
@@ -193,39 +184,29 @@ def ustaw_pozycje_nautralna():
                 generator = generator_szescianu(4)
                 drukowanie = True
                 zadanie_do_druku_po_neutralnej = None
-
             elif zadanie_do_druku_po_neutralnej == "kula":
                 print("Pozycja neutralna osiągnięta. Rozpoczynanie drukowania kuli...")
                 generator = generator_kuli(4)
                 drukowanie = True
-                zadanie_do_druku_po_neutralnej = None
+                zadanie_do_druku_po_neutralnej = None   
 
-            elif zadanie_do_druku_po_neutralnej == "playback":
-                print("Pozycja neutralna osiągnięta. Rozpoczynanie odtwarzania...")
-                tryb_odtwarzania = True
-                ilosc_ruchow_odtworzen = 0
-                czas_rozpoczecia_odtwarzania = pygame.time.get_ticks()
-                zadanie_do_druku_po_neutralnej = None
-
+                
 def Main():
     global z_pos_blatu, y_pos_suwaka, x_pos_glowica, pozycja_neutralna, anim_usuwania, czas_ostatniego_usuwania
     global czas_ostatniego_kroku, drukowanie, czas_ostatniego_bloku, generator, zadanie_do_druku_po_neutralnej
     global stala_przesuniecia_atramentu, stala_przesuniecia_wzgledem_srodka, tryb_widoku, wyswietlanie_budowy_drukarki
-    global tryb_nagrywania, nagrane_ruchy, tryb_odtwarzania, ilosc_ruchow_odtworzen, czas_rozpoczecia_odtwarzania, czas_rozpoczecia_nagrywania
-
     button_down = False
     cubes = set()
-    
     clock = pygame.time.Clock()
     pygame.init()
     pygame.font.init()
     screen_width, screen_height = 1840, 1000
     display = pygame.display.set_mode((screen_width, screen_height), DOUBLEBUF | OPENGL)
     pygame.display.set_caption("Drukarka 3D")
-    glClearColor(0.8, 0.8, 1.0, 1.0) # Jaśniejszy kolor tła (błękitny)
+    glClearColor(0.8, 0.8, 1.0, 1.0) # Jaśniejszy kolor tła (np. błękitny)
     gluPerspective(45, (screen_width / screen_height), 0.1, 500) # kamera widzi 45 stopni, proporcje ekranu, minimalna odleglosc od kamery,max odleglosc do ktorej rysujemy
-
-    # Włączenie oświetlenia i ustawienia   
+    
+    # Włączenie oświetlenia i ustawienia
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
@@ -257,113 +238,47 @@ def Main():
                     tryb_widoku = not tryb_widoku
                     wyswietlanie_budowy_drukarki = not tryb_widoku
                     print(f"Tryb widoku: {tryb_widoku}")
-                
-                if not tryb_widoku and not drukowanie and not pozycja_neutralna and not tryb_nagrywania and not tryb_odtwarzania:
+                if not tryb_widoku:
                     if event.key == pygame.K_c:
-                        if zadanie_do_druku_po_neutralnej is None:
+                        if not drukowanie and not pozycja_neutralna and zadanie_do_druku_po_neutralnej is None:
                             print("Żądanie drukowania sześcianu. Ustawianie pozycji neutralnej...")
                             zadanie_do_druku_po_neutralnej = "szescian"
                             pozycja_neutralna = True
-                        else:
-                            print("Maszyna ma już zaplanowane zadanie.")
-
+                        elif drukowanie:
+                            print("Drukowanie w toku. Nie można rozpocząć nowego zadania.")
+                        elif pozycja_neutralna or zadanie_do_druku_po_neutralnej is not None:
+                            print("Maszyna jest w trakcie ustawiania pozycji neutralnej lub ma już zaplanowane zadanie.")
                     if event.key == pygame.K_v:
-                        if zadanie_do_druku_po_neutralnej is None:
+                        if not drukowanie and not pozycja_neutralna and zadanie_do_druku_po_neutralnej is None:
                             print("Żądanie drukowania kuli. Ustawianie pozycji neutralnej...")
                             zadanie_do_druku_po_neutralnej = "kula"
                             pozycja_neutralna = True
-                        else:
-                            print("Maszyna ma już zaplanowane zadanie.")
-
+                        elif drukowanie:
+                            print("Drukowanie w toku. Nie można rozpocząć nowego zadania.")
+                        elif pozycja_neutralna or zadanie_do_druku_po_neutralnej is not None:
+                            print("Maszyna jest w trakcie ustawiania pozycji neutralnej lub ma już zaplanowane zadanie.")
                     if event.key == pygame.K_r:
-                        if not pozycja_neutralna:
-                            pozycja_neutralna = True
-                            print("Resetowanie pozycji drukarki do neutralnej.")
-                        else:
-                            print("Drukarka już jest w trakcie ustawiania pozycji neutralnej.")
-                    
+                        pozycja_neutralna = True
                     if event.key == pygame.K_DELETE:
-                        if cubes and not anim_usuwania:
+                        if cubes:
                             anim_usuwania = True
                             czas_ostatniego_usuwania = pygame.time.get_ticks()
                             print("Rozpoczęto animację usuwania kostek.")
-                        elif not cubes:
-                            print("Brak kostek do usunięcia.")
-                        else:
-                            print("Animacja usuwania już trwa.")
-
-                if event.key == pygame.K_SLASH and not tryb_widoku:
-                    tryb_nagrywania = not tryb_nagrywania
-                    if tryb_nagrywania:
-                        nagrane_ruchy = []
-                        tryb_odtwarzania = False
-                        drukowanie = False
-                        pozycja_neutralna = False
-                        zadanie_do_druku_po_neutralnej = None
-                        czas_rozpoczecia_nagrywania = pygame.time.get_ticks()
-                        print("ROZPOCZĘTO NAGRYWANIE AKCJI.")
-                    else:
-                        print("ZAKOŃCZONO NAGRYWANIE AKCJI. Zarejestrowano akcji:", len(nagrane_ruchy))
-
-                if event.key == pygame.K_p and not tryb_widoku and not tryb_nagrywania:
-                    if not drukowanie:
-                        if zadanie_do_druku_po_neutralnej is None or zadanie_do_druku_po_neutralnej == "playback":
-                            if nagrane_ruchy:
-                                print("Żądanie odtwarzania. Ustawianie pozycji neutralnej przed odtwarzaniem...")
-                                zadanie_do_druku_po_neutralnej = "playback"
-                                pozycja_neutralna = True
-                                cubes.clear()
-                            else:
-                                print("Brak zarejestrowanych akcji do odtworzenia.")
-                        else:
-                            print(f"Nie można rozpocząć odtwarzania: drukarka ma już zaplanowane zadanie ({zadanie_do_druku_po_neutralnej}).")
-                    else:
-                        print("Nie można rozpocząć odtwarzania: drukarka jest zajęta drukowaniem.")
-
             if event.type == pygame.MOUSEWHEEL:
                 if tryb_widoku:
                     zoom_speed = 0.1
                     glTranslatef(0, 0, event.y * zoom_speed)
-                elif not pozycja_neutralna and not drukowanie and not tryb_odtwarzania:
-                    current_time = pygame.time.get_ticks() - czas_rozpoczecia_nagrywania if tryb_nagrywania else 0
+                elif not pozycja_neutralna and not drukowanie:
                     if event.y > 0:
                         y_pos_suwaka = min(y_pos_suwaka + 0.02, 0.9)
-                    if tryb_nagrywania:
-                        nagrane_ruchy.append(('MOVE_Y_SUWAK', y_pos_suwaka, current_time))
-                        print(f'NAGRANO: Ruch suwaka Y do: {y_pos_suwaka:.3f}, czas: {current_time}ms')
-
             if event.type == pygame.MOUSEMOTION:
                 if button_down and (event.rel[0] != 0 or event.rel[1] != 0):
                     sensitivity = 0.1
                     glRotatef(event.rel[1] * sensitivity, 1, 0, 0)
                     glRotatef(event.rel[0] * sensitivity, 0, 1, 0)
 
-        if not tryb_widoku and not pozycja_neutralna and not drukowanie and not tryb_odtwarzania:
+        if not tryb_widoku:
             keys = pygame.key.get_pressed()
-            current_time = pygame.time.get_ticks() - czas_rozpoczecia_nagrywania if tryb_nagrywania else 0
-            
-            if keys[pygame.K_s] and z_pos_blatu > -0.595:
-                z_pos_blatu -= 0.02
-                if tryb_nagrywania:
-                    nagrane_ruchy.append(('MOVE_Z_BLAT', z_pos_blatu, current_time))
-                    print(f'NAGRANO: Ruch blatu Z do: {z_pos_blatu:.3f}, czas: {current_time}ms')
-            if keys[pygame.K_w] and z_pos_blatu < 1.045:
-                z_pos_blatu += 0.02
-                if tryb_nagrywania:
-                    nagrane_ruchy.append(('MOVE_Z_BLAT', z_pos_blatu, current_time))
-                    print(f'NAGRANO: Ruch blatu Z do: {z_pos_blatu:.3f}, czas: {current_time}ms')
-            
-            if keys[pygame.K_a] and x_pos_glowica > -0.825:
-                x_pos_glowica -= 0.02
-                if tryb_nagrywania:
-                    nagrane_ruchy.append(('MOVE_X_GLOWICA', x_pos_glowica, current_time))
-                    print(f'NAGRANO: Ruch głowicy X do: {x_pos_glowica:.3f}, czas: {current_time}ms')
-            if keys[pygame.K_d] and x_pos_glowica < 0.825:
-                x_pos_glowica += 0.02
-                if tryb_nagrywania:
-                    nagrane_ruchy.append(('MOVE_X_GLOWICA', x_pos_glowica, current_time))
-                    print(f'NAGRANO: Ruch głowicy X do: {x_pos_glowica:.3f}, czas: {current_time}ms')
-            
             if keys[pygame.K_SPACE]:
                 now = time.time()
                 if now - czas_ostatniego_bloku > (1/szybkosc_recznego_drukowania):
@@ -374,67 +289,50 @@ def Main():
                     rounded_pos = (x, y, z)
                     if rounded_pos not in cubes:
                         cubes.add(rounded_pos)
-                        if tryb_nagrywania:
-                            nagrane_ruchy.append(('PRINT_BLOCK', rounded_pos, current_time))
-                            print(f'NAGRANO: Dodano kostkę w pozycji: {rounded_pos}, czas: {current_time}ms')
                         print(f'Dodano kostkę w przybliżeniu: {rounded_pos}, przy z_blatu: {z_pos_blatu}')
                     czas_ostatniego_bloku = now
 
-        if drukowanie:
-            teraz = pygame.time.get_ticks()
-            if teraz - czas_ostatniego_kroku >= opoznienie_kroku:
-                try:
-                    command = next(generator)
-                    if command[0] == "USTAW_GLOWICA_X":
-                        x_pos_glowica = command[1]
-                    elif command[0] == "USTAW_SUWAK_Y":
-                        y_pos_suwaka = command[1]
-                    elif command[0] == "USTAW_BLAT_Z":
-                        z_pos_blatu -= 0.02
-                    elif command[0] == "PRINT_BLOCK":
-                        cubes.add(command[1])
-                    elif command[0] == "FINISHED":
+            if not pozycja_neutralna and not drukowanie:
+                if keys[pygame.K_s] and z_pos_blatu > -0.595:
+                    z_pos_blatu -= 0.02
+                if keys[pygame.K_w] and z_pos_blatu < 1.045:
+                    z_pos_blatu += 0.02
+                if keys[pygame.K_a] and x_pos_glowica > -0.825:
+                    x_pos_glowica -= 0.02
+                if keys[pygame.K_d] and x_pos_glowica < 0.825:
+                    x_pos_glowica += 0.02
+
+            if drukowanie:
+                teraz = pygame.time.get_ticks()
+                if teraz - czas_ostatniego_kroku >= opoznienie_kroku:
+                    try:
+                        command = next(generator)
+                        if command[0] == "USTAW_GLOWICA_X":
+                            x_pos_glowica = command[1]
+                        elif command[0] == "USTAW_SUWAK_Y":
+                            y_pos_suwaka = command[1]
+                        elif command[0] == "USTAW_BLAT_Z":
+                            z_pos_blatu -= 0.02
+                        elif command[0] == "PRINT_BLOCK":
+                            cubes.add(command[1])
+                        elif command[0] == "FINISHED":
+                            drukowanie = False
+                            generator = None
+                            pozycja_neutralna = True
+                            print("Drukowanie zakończone!")
+                        elif command[0] == "RESET_BLAT_Z":
+                            z_pos_blatu += command[1]
+                        czas_ostatniego_kroku = teraz
+                    except StopIteration:
                         drukowanie = False
                         generator = None
-                        print("Drukowanie zakończone!")
-                    elif command[0] == "RESET_BLAT_Z":
-                        z_pos_blatu += command[1]
-                    czas_ostatniego_kroku = teraz
-                except StopIteration:
-                    drukowanie = False
-                    generator = None
-                    pozycja_neutralna = True
-                    print("Drukowanie zakończone z wyjątkiem StopIteration.")
+                        print("Drukowanie zakończone z wyjątkiem StopIteration.")
 
-        if tryb_odtwarzania and not pozycja_neutralna:
-            teraz = pygame.time.get_ticks()
-            if ilosc_ruchow_odtworzen < len(nagrane_ruchy):
-                action_type, value, action_time = nagrane_ruchy[ilosc_ruchow_odtworzen]
-                elapsed_time = teraz - czas_rozpoczecia_odtwarzania
-                if elapsed_time >= action_time:
-                    if action_type == 'MOVE_X_GLOWICA':
-                        x_pos_glowica = value
-                        print(f"Odtwarzanie: Ruch głowicy X do {x_pos_glowica:.3f}, czas: {action_time}ms")
-                    elif action_type == 'MOVE_Y_SUWAK':
-                        y_pos_suwaka = value
-                        print(f"Odtwarzanie: Ruch suwaka Y do {y_pos_suwaka:.3f}, czas: {action_time}ms")
-                    elif action_type == 'MOVE_Z_BLAT':
-                        z_pos_blatu = value
-                        print(f"Odtwarzanie: Ruch blatu Z do {z_pos_blatu:.3f}, czas: {action_time}ms")
-                    elif action_type == 'PRINT_BLOCK':
-                        if value not in cubes:
-                            cubes.add(value)
-                            print(f"Odtwarzanie: Dodano kostkę w pozycji {value}, czas: {action_time}ms")
-                    ilosc_ruchow_odtworzen += 1
-            else:
-                tryb_odtwarzania = False
-                ilosc_ruchow_odtworzen = 0
-                print("Odtwarzanie zakończone!")
-
-        if pozycja_neutralna:
-            ustaw_pozycje_nautralna()
+            if pozycja_neutralna:
+                ustaw_pozycje_nautralna()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
         Table(z_pos_blatu, y_pos_suwaka, x_pos_glowica)
         for x_c, y_c, z_c in cubes:
             glPushMatrix()
@@ -444,7 +342,7 @@ def Main():
 
         if anim_usuwania:
             teraz = pygame.time.get_ticks()
-            if teraz - czas_ostatniego_usuwania >= opoznienie_usuwania * 1000:
+            if teraz - czas_ostatniego_usuwania >= opoznienie_usuwania:
                 if cubes:
                     removed = cubes.pop()
                     print(f"Usunięto kostkę: {removed}")
@@ -465,12 +363,10 @@ def Main():
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        # Nowy kolor tła (0.8, 0.8, 1.0) -> (204, 204, 255) z zachowaniem przezroczystości
-        text_background_color = (204, 204, 255, 180)
 
         # --- WYSWIETLANIE FPS ---
         fps_font = pygame.font.Font(None, 36)
-        fps_text_surface = fps_font.render(f"FPS: {clock.get_fps():.2f}", True, (0, 0, 0), text_background_color)
+        fps_text_surface = fps_font.render(f"FPS: {clock.get_fps():.2f}", True, (0, 0, 0), (255, 255, 255, 180))
         text_data = pygame.image.tostring(fps_text_surface, "RGBA", True)
         text_x = 10
         text_y = screen_height - fps_text_surface.get_height() - 10
@@ -480,72 +376,12 @@ def Main():
         # --- WYŚWIETLANIE ATARMENTU ---
         ink_pos_font = pygame.font.Font(None, 28)
         ink_pos_text = f"Atrament XYZ: ({x_pos_glowica:.3f}, {y_pos_suwaka-stala_przesuniecia_atramentu:.3f}, {stala_przesuniecia_wzgledem_srodka:.3f})"
-        ink_surface = ink_pos_font.render(ink_pos_text, True, (0, 0, 0), text_background_color)
+        ink_surface = ink_pos_font.render(ink_pos_text, True, (0, 0, 0), (255, 255, 255, 180))
         ink_text_data = pygame.image.tostring(ink_surface, "RGBA", True)
         ink_text_x = 10
         ink_text_y = text_y - ink_surface.get_height() - 5
         glRasterPos2i(ink_text_x, ink_text_y)
         glDrawPixels(ink_surface.get_width(), ink_surface.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, ink_text_data)
-
-        # --- WYŚWIETLANIE POWTÓRKI DRUKOWANIA ---
-        mode_font = pygame.font.Font(None, 28)
-        mode_text = ""
-        mode_color = (0, 0, 0)
-        if tryb_nagrywania:
-            mode_text = "TRYB NAGRYWANIA (Zakoncz: /)"
-            mode_color = (0, 150, 0)
-        elif tryb_odtwarzania:
-            mode_text = f"TRYB ODTWARZANIA [{ilosc_ruchow_odtworzen}/{len(nagrane_ruchy)}]"
-            mode_color = (200, 0, 0)
-        elif drukowanie:
-            mode_text = "DRUKOWANIE..."
-            mode_color = (0, 0, 200)
-        elif pozycja_neutralna:
-            mode_text = "POZYCJA NEUTRALNA..."
-            mode_color = (150, 150, 0)
-
-        if mode_text:
-            mode_surface = mode_font.render(mode_text, True, mode_color, text_background_color)
-            mode_text_data = pygame.image.tostring(mode_surface, "RGBA", True)
-            mode_text_x = 10
-            mode_text_y = ink_text_y - mode_surface.get_height() - 5
-            glRasterPos2i(mode_text_x, mode_text_y)
-            glDrawPixels(mode_surface.get_width(), mode_surface.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, mode_text_data)
-
-        # --- WYŚWIETLANIE INSTRUKCJI STEROWANIA ---
-        instructions = [
-            "    Sterowanie    ",
-            " ",
-            "W/S: Ruch platformy",
-            "A/D: Ruch głowicy",
-            "KÓŁKO MYSZY: Ruch suwaka",
-            "R: Pozycja neutralna",
-            " ",
-            "SPACJA - Druk ręczny",
-            "C: Drukuj sześcian",
-            "V: Drukuj kulę",
-            "DELETE: Usuń wydruk",
-            "E: Podgląd wydruku",
-            " ", 
-            "/ : Nagrywanie On/Off",
-            "P: Odtwarzanie ruchów"
-        ]
-        
-        instr_font = pygame.font.Font(None, 26)
-        instr_y = screen_height - 30 # Pozycja Y pierwszej linijki od góry
-
-        for line in instructions:
-            instr_surface = instr_font.render(line, True, (0, 0, 0), text_background_color)
-            instr_text_data = pygame.image.tostring(instr_surface, "RGBA", True)
-            
-            instr_x = screen_width - instr_surface.get_width() - 10
-            
-            glRasterPos2i(instr_x, instr_y)
-            glDrawPixels(instr_surface.get_width(), instr_surface.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, instr_text_data)
-            
-            instr_y -= instr_surface.get_height() + 2
-
-
 
         glEnable(GL_DEPTH_TEST) # Włącz ponownie test głębi
         glDisable(GL_BLEND) # Włącz ponownie oświetlenie

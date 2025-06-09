@@ -1,0 +1,2 @@
+python -m venv venv-weekend
+.\venv-weekend\Scripts\activate
